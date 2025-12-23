@@ -1,0 +1,47 @@
+# 🏗️ Базовый образ Python
+FROM python:3.11-slim
+
+# 📦 Обновляем пакеты и устанавливаем зависимости для GUI
+RUN apt-get update && apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    # Tkinter dependencies
+    tk \
+    tcl \
+    # X11 для графического интерфейса
+    x11-apps \
+    # Утилиты для отладки (опционально)
+    procps \
+    nano \
+    # Очистка кэша apt
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# 🌐 Переменные окружения для GUI
+# Для Linux с X11 forwarding
+ENV DISPLAY=:0
+ENV QT_X11_NO_MITSHM=1
+ENV XAUTHORITY=/tmp/.docker.xauth
+
+# 📂 Создаем рабочую директорию
+WORKDIR /app
+
+# 📄 Копируем исходный код
+# Замените chess.txt на chess.py если переименовали файл
+COPY chess.txt chess.py
+
+# 👨‍💻 Опционально: установка Python зависимостей
+# Если у вас есть requirements.txt:
+# COPY requirements.txt .
+# RUN pip install --no-cache-dir -r requirements.txt
+
+# 🚀 Команда запуска
+CMD ["python", "chess.py"] 
+
+# В директории с Dockerfile
+docker build -t chess-game:latest . 
+
+export DISPLAY=$(grep -m 1 nameserver /etc/resolv.conf | awk '{print $2}'):0
+docker run -it --rm \
+  -e DISPLAY=$DISPLAY \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  chess-game:latest
